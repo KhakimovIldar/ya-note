@@ -1,11 +1,11 @@
 from http import HTTPStatus
 
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
-
+from django.test import TestCase
 from django.urls import reverse
 
 from notes.models import Note
+
 User = get_user_model()
 
 
@@ -39,7 +39,10 @@ class TestRoutes(TestCase):
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_notes_list_page(self):
-        """Тест главной страницы, доступна авторизованному пользователю."""
+        """
+        Тест страницы со списком и добавления заметки.
+        Доступна авторизованному пользователю.
+        """
         self.client.force_login(self.author)
         urls = (
             'notes:list',
