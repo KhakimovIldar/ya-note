@@ -55,7 +55,9 @@ class TestRoutes(TestCase):
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_availability_in_application(self):
-        """Страницы детализациии, удаления и редактирования доступны автору."""
+        """
+        Страницы детализациии, удаления и редактирования доступны автору.
+        """
         urls = (
             'notes:delete',
             'notes:detail',
