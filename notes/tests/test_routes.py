@@ -24,13 +24,15 @@ class TestRoutes(TestCase):
 
     def test_home_page(self):
         """
-        Тест Главная страница доступна анонимному пользователю.
-        Страницы регистрации и входа в доступны анонимным пользователям.
+        П.1 главная страница доступна анонимному пользователю.
+        П.5 Страницы регистрации пользователей, входа и выходав учётную запись.
+        Доступны всем пользователям.
         """
         urls = (
             'notes:home',
-            'users:login',
             'users:signup',
+            'users:login',
+            # 'users:logout',
         )
         for name in urls:
             with self.subTest(name=name):
@@ -38,15 +40,17 @@ class TestRoutes(TestCase):
                 response = self.client.get(url)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
-    def test_notes_list_page(self):
+    def test_add_sseccuss_list_notes(self):
         """
-        Тест страницы со списком и добавления заметки.
-        Доступна авторизованному пользователю.
+        П.2 плана сестов. Аутентифицированному пользователю доступны страницы.
+        Со списком заметок notes/, страница успешного добавления заметки done/.
+        Cтраница добавления новой заметки add/.
         """
         self.client.force_login(self.author)
         urls = (
-            'notes:list',
             'notes:add',
+            'notes:success',
+            'notes:list',
         )
         for name in urls:
             with self.subTest(name=name):
@@ -54,9 +58,10 @@ class TestRoutes(TestCase):
                 response = self.client.get(url)
                 self.assertEqual(response.status_code, HTTPStatus.OK)
 
-    def test_availability_in_application(self):
+    def test_availability_delete_detail_edit_notes(self):
         """
-        Страницы детализациии, удаления и редактирования доступны автору.
+        П.3 Страницы детализациии, удаления и редактирования доступны автору.
+        Другому пользователю — вернётся ошибка 404.
         """
         urls = (
             'notes:delete',
@@ -75,11 +80,18 @@ class TestRoutes(TestCase):
                     response = self.client.get(url)
                     self.assertEqual(response.status_code, status)
 
-    def test_redirect_after_succesful_operation(self):
-        """Тест редиректа после добавления, удаления и редактирования."""
+    def test_redirect_anonymous_user(self):
+        """
+        П.4 Тест редиректа на страницу логина после попытки зайти на странмцы.
+        Списка, успешного добавления, добавления, отдельной заметки.
+        Редактирования или удаления замекти анонимного пользователя.
+        """
         login_url = reverse('users:login')
         urls = (
+            ('notes:list', None),
+            ('notes:success', None),
             ('notes:add', None),
+            ('notes:detail', (self.note.slug,)),
             ('notes:delete', (self.note.slug,)),
             ('notes:edit', (self.note.slug,)),
         )

@@ -1,5 +1,3 @@
-from datetime import datetime, timedelta
-
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -7,13 +5,11 @@ from django.urls import reverse
 from notes.forms import NoteForm
 from notes.models import Note
 
-
 User = get_user_model()
 
 
 class TestNotesListPage(TestCase):
-    """Тест контента на странице с заметками"""
-
+    """Тест контента на странице с заметками."""
     NOTES_LIST_URL = reverse('notes:list')
 
     @classmethod
@@ -39,8 +35,41 @@ class TestNotesListPage(TestCase):
         self.assertEqual(notes_count, 100)
 
 
-class TestNotesAccesRights(TestCase):
+class TestContent(TestCase):
+    """
+    П.1 отдельная заметка передаётся на страницу со списком заметок.
+    В object_list в словаре context.
+    П.2 В список заметок одного пользователя не попадают заметки другого.
+    """
+    NOTES_LIST_URL = reverse('notes:list')
 
+    @classmethod
+    def setUpTestData(cls):
+        cls.author_1 = User.objects.create(username='Автор')
+        cls.author_2 = User.objects.create(username='Автор_2')
+        cls.note_1 = Note.objects.create(
+            title='Заголовок',
+            slug='slug',
+            text='text',
+            author=cls.author_1,
+        )
+        cls.note_2 = Note.objects.create(
+            title='Заголовок_2',
+            slug='slug_2',
+            text='text_2',
+            author=cls.author_2,
+        )
+
+    def test_note_in_object_list(self):
+        self.client.force_login(self.author_1)
+        response = self.client.get(self.NOTES_LIST_URL)
+        object_list = response.context['object_list']
+        self.assertIn(self.note_1, object_list)
+        self.assertNotIn(self.note_2, object_list)
+
+
+class TestNotesAccesRights(TestCase):
+    """На страницы создания и редактирования заметки передаются формы."""
     @classmethod
     def setUpTestData(cls):
         cls.author = User.objects.create(username='Автор')
