@@ -1,6 +1,6 @@
-
 from http import HTTPStatus
 
+import pytils.translit
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from django.test import Client, TestCase
@@ -8,8 +8,6 @@ from django.urls import reverse
 
 from ..forms import NoteForm
 from ..models import Note
-
-import pytils.translit
 
 User = get_user_model()
 
