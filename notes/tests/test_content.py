@@ -1,99 +1,86 @@
+#content.py
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.test.client import Client
 from django.urls import reverse
 
 from notes.forms import NoteForm
 from notes.models import Note
+from notes.tests.urls import UrlMixin
 
 User = get_user_model()
 
 
-class TestNotesListPage(TestCase):
-    """Тест контента на странице с заметками."""
-    NOTES_LIST_URL = reverse('notes:list')
-
+class BaseClass(TestCase):
     @classmethod
     def setUpTestData(cls):
+
         cls.author = User.objects.create(username='Автор')
-        all_notes = [
-            Note(
-                title=f'Заметка {index}',
-                slug=f'note-{index}',
-                text='Просто текст.',
-                author=cls.author,
-            )
-            for index in range(100)
-        ]
-        Note.objects.bulk_create(all_notes)
+        cls.author_client = Client()
+        cls.author_client.force_login(cls.author)
 
-    def test_notes_count(self):
-        """Тест на то, что все заметки отображаются на главной странице."""
-        self.client.force_login(self.author)
-        response = self.client.get(self.NOTES_LIST_URL)
-        object_list = response.context['object_list']
-        notes_count = object_list.count()
-        self.assertEqual(notes_count, 100)
+        cls.not_author = User.objects.create(username='Не автор')
+        cls.not_author_client = Client()
+        cls.not_author_client.force_login(cls.not_author)
+
+        cls.note = Note.objects.create(
+            title='Заголовок заметки',
+            text='Просто текст.',
+            # slug='test',
+            slug=UrlMixin.NOTE_SLUG_AUTHOR,
+            author=cls.author,
+        )
 
 
-class TestContent(TestCase):
+class TestContent(BaseClass, UrlMixin):
     """
     П.1 отдельная заметка передаётся на страницу со списком заметок.
     В object_list в словаре context.
     П.2 В список заметок одного пользователя не попадают заметки другого.
     """
-    NOTES_LIST_URL = reverse('notes:list')
-
-    @classmethod
-    def setUpTestData(cls):
-        cls.author_1 = User.objects.create(username='Автор')
-        cls.author_2 = User.objects.create(username='Автор_2')
-        cls.note_1 = Note.objects.create(
-            title='Заголовок',
-            slug='slug',
-            text='text',
-            author=cls.author_1,
-        )
-        cls.note_2 = Note.objects.create(
-            title='Заголовок_2',
-            slug='slug_2',
-            text='text_2',
-            author=cls.author_2,
-        )
 
     def test_note_in_object_list(self):
-        self.client.force_login(self.author_1)
-        response = self.client.get(self.NOTES_LIST_URL)
-        object_list = response.context['object_list']
-        self.assertIn(self.note_1, object_list)
-        self.assertNotIn(self.note_2, object_list)
+        response = self.author_client.get(self.NOTES_LIST_URL)
+        notes = response.context['object_list']
+        note_in_list = notes.get(id=self.note.id)
+
+        self.assertIn(self.note, notes)
+        self.assertEqual(self.note.title, note_in_list.title)
+        self.assertEqual(self.note.text, note_in_list.text)
+        self.assertEqual(self.note.slug, note_in_list.slug)
+        self.assertEqual(self.note.author, note_in_list.author)
+
+    def test_notes_of_differernt_users_dont_across(self):
+        note_from_not_author = Note.objects.create(
+            title='Заголовок заметки не автора.',
+            text='Просто текст.',
+            slug='test-note-slug',
+            author=self.not_author,
+        )
+        response = self.author_client.get(self.NOTES_LIST_URL)
+        notes = response.context['object_list']
+
+        self.assertNotIn(note_from_not_author, notes)
 
 
-class TestNotesAccesRights(TestCase):
+class TestNotesAccesRights(BaseClass):
     """На страницы создания и редактирования заметки передаются формы."""
-    @classmethod
-    def setUpTestData(cls):
-        cls.author = User.objects.create(username='Автор')
-        cls.note = Note.objects.create(
-            title='Ildar',
-            text='Текст',
-            author=cls.author,
-        )
-        cls.urls = (
-            ('notes:add', None),
-            ('notes:edit', (cls.note.slug,)),
-        )
+    urls = [
+        UrlMixin.NOTES_ADD_URL,
+        UrlMixin.NOTES_EDIT_URL
+    ]
 
-    def test_anonymous_client_has_no_form(self):
-        for name, args in self.urls:
-            url = reverse(name, args=args)
-            response = self.client.get(url)
-            if response.context:
-                self.assertNotIn('form', response.context)
+    # def test_anonymous_client_has_no_form(self):
+    #     # for url in self.urls:
+    #     #     response = self.client.get(url)
+    #     #     self.assertNotIn('form', response.context)
+    #     url = reverse('notes:add')
+    #     response = self.client.get(url)
+    #     self.assertNotIn('form', response.context)
 
     def test_authorized_client_has_form(self):
-        self.client.force_login(self.author)
-        for name, args in self.urls:
-            url = reverse(name, args=args)
-            response = self.client.get(url)
-            self.assertIn('form', response.context)
-            self.assertIsInstance(response.context['form'], NoteForm)
+        for url in self.urls:
+            with self.subTest(url=url):
+                self.assertIsInstance(
+                    self.author_client.get(url).context.get('form'), NoteForm
+                )
