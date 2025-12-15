@@ -1,41 +1,12 @@
 from http import HTTPStatus
 
 import pytils.translit
-from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
 
+from .base_class import BaseClass
 from ..models import Note
-from .urls import UrlMixin
-
-User = get_user_model()
 
 
-class Base(TestCase, UrlMixin):
-    @classmethod
-    def setUpTestData(cls):
-        cls.author = User.objects.create(username='Пользователь')
-        cls.auth_client = Client()
-        cls.auth_client.force_login(cls.author)
-
-        cls.reader = User.objects.create(username='Читатель')
-        cls.reader_client = Client()
-        cls.reader_client.force_login(cls.reader)
-
-        cls.form_data = {
-            'title': 'Заголовок 2',
-            'text': 'Текст 2',
-            'slug': f'{cls.NOTE_SLUG_READER}'
-        }
-        cls.new_note = Note.objects.create(
-            title='Заголовок',
-            author=cls.author,
-            text='Текст',
-            slug=cls.NOTE_SLUG_AUTHOR,
-        )
-        cls.initial_notes_count = Note.objects.count()
-
-
-class TestNoteCreation(Base):
+class TestNoteCreation(BaseClass):
     def test_anonymous_user_cant_create_note(self):
         """П.1 Анонимный пользователь не может создать заметку."""
         self.client.post(self.NOTES_ADD_URL, data=self.form_data)

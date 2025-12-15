@@ -13,6 +13,7 @@ class UrlMixin:
 
     # Константы для параметров
     NOTE_SLUG_AUTHOR = 'notes_slug_author'
+    NOTE_SLUG_READER = 'notes_slug_reaer'
 
     # Зависят от константных тестовых данных.
     NOTES_EDIT_AUTH_URL = reverse('notes:edit', args=[NOTE_SLUG_AUTHOR])
