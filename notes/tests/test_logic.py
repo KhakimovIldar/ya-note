@@ -74,20 +74,20 @@ class TestNoteCreation(Base):
 
     def test_author_can_delete_note(self):
         """П.4 Пользователь может удалять свои заметки."""
-        response = self.auth_client.delete(self.NOTES_DELETE_BY_AUTH_URL)
+        response = self.auth_client.delete(self.NOTES_DELETE_AUTH_URL)
         self.assertRedirects(response, self.NOTES_SUCCESS_URL)
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.assertEqual(Note.objects.count(), self.initial_notes_count - 1)
 
     def test_user_cant_delete_note_of_another_user(self):
         """П.4 Пользователь не может удалять чужие заметки."""
-        response = self.reader_client.delete(self.NOTES_DELETE_BY_AUTH_URL)
+        response = self.reader_client.delete(self.NOTES_DELETE_AUTH_URL)
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
         self.assertEqual(Note.objects.count(), self.initial_notes_count)
 
     def test_author_can_edit_note(self):
         """П.4 Пользователь может редактировать свои заметки."""
-        response = self.auth_client.post(self.NOTES_EDIT_URL,
+        response = self.auth_client.post(self.NOTES_EDIT_AUTH_URL,
                                          data=self.form_data)
         note = Note.objects.get()
         self.assertRedirects(response, self.NOTES_SUCCESS_URL)
@@ -99,7 +99,7 @@ class TestNoteCreation(Base):
         """П.4 Пользователь не может редактировать чужие заметки."""
         initial_note = Note.objects.get()
         print(initial_note)
-        response = self.reader_client.post(self.NOTES_EDIT_URL,
+        response = self.reader_client.post(self.NOTES_EDIT_AUTH_URL,
                                            data=self.form_data)
         note = Note.objects.get()
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)

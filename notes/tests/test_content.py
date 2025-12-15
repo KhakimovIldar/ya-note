@@ -30,7 +30,7 @@ class BaseClass(TestCase, UrlMixin):
 
         cls.urls = [
             cls.NOTES_ADD_URL,
-            cls.NOTES_EDIT_URL
+            cls.NOTES_EDIT_BY_AUTH_URL
         ]
 
 
