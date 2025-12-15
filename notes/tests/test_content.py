@@ -1,8 +1,6 @@
-#content.py
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.test.client import Client
-from django.urls import reverse
 
 from notes.forms import NoteForm
 from notes.models import Note
@@ -11,7 +9,7 @@ from notes.tests.urls import UrlMixin
 User = get_user_model()
 
 
-class BaseClass(TestCase):
+class BaseClass(TestCase, UrlMixin):
     @classmethod
     def setUpTestData(cls):
 
@@ -26,13 +24,17 @@ class BaseClass(TestCase):
         cls.note = Note.objects.create(
             title='Заголовок заметки',
             text='Просто текст.',
-            # slug='test',
             slug=UrlMixin.NOTE_SLUG_AUTHOR,
             author=cls.author,
         )
 
+        cls.urls = [
+            cls.NOTES_ADD_URL,
+            cls.NOTES_EDIT_URL
+        ]
 
-class TestContent(BaseClass, UrlMixin):
+
+class TestContent(BaseClass):
     """
     П.1 отдельная заметка передаётся на страницу со списком заметок.
     В object_list в словаре context.
@@ -65,10 +67,10 @@ class TestContent(BaseClass, UrlMixin):
 
 class TestNotesAccesRights(BaseClass):
     """На страницы создания и редактирования заметки передаются формы."""
-    urls = [
-        UrlMixin.NOTES_ADD_URL,
-        UrlMixin.NOTES_EDIT_URL
-    ]
+    # urls = [
+    #     UrlMixin.NOTES_ADD_URL,
+    #     UrlMixin.NOTES_EDIT_URL
+    # ]
 
     # def test_anonymous_client_has_no_form(self):
     #     # for url in self.urls:
