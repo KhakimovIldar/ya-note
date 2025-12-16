@@ -25,4 +25,3 @@ class UrlMixin:
         NOTES_DETAIL_AUTH_URL}'
     NOTES_EDIT_AUTH_REDIRECT_URL = f'{USER_LOGIN_URL}?next={
         NOTES_EDIT_AUTH_URL}'
-
