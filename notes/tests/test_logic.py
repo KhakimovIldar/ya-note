@@ -1,3 +1,4 @@
+#test_logic
 from http import HTTPStatus
 
 import pytils.translit
@@ -10,16 +11,16 @@ class TestNoteCreation(BaseClass):
     def test_anonymous_user_cant_create_note(self):
         """П.1 Анонимный пользователь не может создать заметку."""
         self.client.post(self.NOTES_ADD_URL, data=self.form_data)
-        self.assertEqual(self.initial_notes_count, Note.objects.count())
+        self.assertQuerySetEqual(self.initial_notes, Note.objects.all())
 
-    def test_user_can_create_note(self):
+    def test_user_can_create_note(self):  # Доработать
         """П.1 Залогиненный пользователь может создать заметку."""
         response = self.auth_client.post(
             self.NOTES_ADD_URL, data=self.form_data
         )
-        note = Note.objects.get(title=self.form_data['title'])
         self.assertRedirects(response, self.NOTES_SUCCESS_URL)
-        self.assertEqual(self.initial_notes_count + 1, Note.objects.count())
+        self.assertEqual(Note.objects.all().count(), 1)
+        note = Note.objects.get()
         self.assertEqual(note.title, self.form_data['title'])
         self.assertEqual(note.text, self.form_data['text'])
         self.assertEqual(note.slug, self.form_data['slug'])
@@ -27,28 +28,30 @@ class TestNoteCreation(BaseClass):
 
     def test_duplicate_slug(self):
         """П.2 Невозможно создать две заметки с одинаковым slug."""
-        self.form_data['slug'] = f'{self.NOTE_SLUG_AUTHOR}'
-        response = self.auth_client.post(
-            self.NOTES_ADD_URL, data=self.form_data
-        )
-        form = response.context['form']
-        self.assertIn('slug', form.errors)
+        self.form_data['slug'] = f'{self.note.slug}'
+        self.assertIn('slug', self.auth_client.post(
+            self.NOTES_ADD_URL, data=self.form_data).context['form'].errors)
+        self.assertEqual(Note.objects.all().count(), 1)
 
-    def test_translit_empty_slug(self):
+    def test_translit_empty_slug(self): # Доработать
         """П.3 Slug формируется автоматически, с помощью translit.slugify."""
-        self.form_data['title'] = 'Новая заметка'
         self.form_data['slug'] = ''
         self.auth_client.post(self.NOTES_ADD_URL, data=self.form_data)
-        note = Note.objects.get(title=self.form_data['title'])
+        self.assertEqual(Note.objects.all().count(), 1)
+        note = Note.objects.get()
         self.assertEqual(note.slug, pytils.translit.slugify(
             self.form_data['title']))
+        self.assertEqual(note.title, self.form_data['title'])
+        self.assertEqual(note.text, self.form_data['text'])
+        self.assertEqual(note.author, self.author)
 
     def test_author_can_delete_note(self):
         """П.4 Пользователь может удалять свои заметки."""
+        self.note_create()
         response = self.auth_client.delete(self.NOTES_DELETE_AUTH_URL)
         self.assertRedirects(response, self.NOTES_SUCCESS_URL)
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
-        self.assertEqual(Note.objects.count(), self.initial_notes_count - 1)
+        self.assertEqual(Note.objects.count(), 0)
 
     def test_user_cant_delete_note_of_another_user(self):
         """П.4 Пользователь не может удалять чужие заметки."""
@@ -69,7 +72,6 @@ class TestNoteCreation(BaseClass):
     def test_user_cant_edit_comment_of_another_user(self):
         """П.4 Пользователь не может редактировать чужие заметки."""
         initial_note = Note.objects.get()
-        print(initial_note)
         response = self.reader_client.post(self.NOTES_EDIT_AUTH_URL,
                                            data=self.form_data)
         note = Note.objects.get()

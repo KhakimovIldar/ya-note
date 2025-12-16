@@ -24,9 +24,19 @@ class BaseClass(TestCase, UrlMixin):
         cls.form_data = {
             'title': 'Заголовок 2',
             'text': 'Текст 2',
-            'slug': f'{cls.NOTE_SLUG_READER}'
+            'slug': f'{cls.NOTE_SLUG_AUTHOR}'
         }
+        cls.initial_notes = Note.objects.all()
         cls.note = Note.objects.create(
+            title='Заголовок',
+            author=cls.author,
+            text='Текст',
+            slug=cls.NOTE_SLUG_AUTHOR,
+        )
+
+    @classmethod
+    def note_create(cls, **kwargs):
+        return Note.objects.create(
             title='Заголовок',
             author=cls.author,
             text='Текст',

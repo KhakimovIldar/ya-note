@@ -5,6 +5,7 @@ from notes.forms import NoteForm
 class TestContent(BaseClass):
 
     def test_note_in_object_list(self):
+
         response = self.auth_client.get(self.NOTES_LIST_URL)
         notes = response.context['object_list']
         note = notes.get(id=self.note.id)
@@ -24,3 +25,4 @@ class TestContent(BaseClass):
                 self.assertIsInstance(
                     self.auth_client.get(url).context.get('form'), NoteForm
                 )
+
